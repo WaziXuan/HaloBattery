@@ -76,6 +76,10 @@ and the project follows [Semantic Versioning](https://semver.org/).
   battery/history mutations without changing device requests or controller identities.
 
 ### Added
+- Rapoo VT3 (`24AE:1412` receiver, `24AE:4612` cable): read the level from the
+  same listen-only report-7 push used by the VT7. A read-only capture confirmed
+  70% on the receiver; the cable id comes from the same machine's device tree
+  and its charging reading is not yet hardware-confirmed.
 - Razer BlackShark V3 Pro (`1532:0577`) on its 2.4 GHz receiver: it exposes
   the same `ff14:0001` collections as the BlackShark V3, so it is read by that path
   ([#519](https://github.com/HeyOkay/HaloBattery/issues/519)). The reporter

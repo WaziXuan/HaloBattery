@@ -1566,6 +1566,16 @@ vendor HUB report-7 parser and A HUB's `RapooDevice.dll` keyboard parser,
 with captured `bd 01 ...` status frames and the receiver/cable IDs in
 [#193](https://github.com/HeyOkay/HaloBattery/issues/193). `24ae:14a9` was
 added from [#235](https://github.com/HeyOkay/HaloBattery/issues/235).
+
+The **Rapoo VT3 `24ae:1412`** uses the same report-7 push. A read-only capture
+on 2026-11-23 (no feature report or output report was sent) saw interface 1's
+`ff00:0002` collection emit
+`07 10 03 40 06 40 06 01 46 00 01 01 00`: state byte 7 is `01` (on battery)
+and byte 8 is `0x46` = 70. The same machine's device tree also contains
+`24ae:4612` with an identical collection shape, the receiver/cable id pattern
+documented for the VT7 in #193; it was not connected during the capture, so
+its charging reading is not yet hardware-confirmed. Both ids feed one icon and
+a charging reading wins, as with the VT7.
 The vendor binaries/web bundles are named historical sources, not pinned
 source files in this repository; do not present them as reproducibly archived.
 
