@@ -30,6 +30,10 @@ from providers import rapoo as R  # noqa: E402
 # a status push: report id 7, receiver connection, state 1, 100 % - built from
 # the layout in the web driver's parser, not captured from hardware
 REFERENCE = [0x07, 0x02, 0x01, 0xD0, 0x07, 0xD0, 0x07, 0x01, 0x64, 0x00, 0x01, 0x01, 0x01]
+# read only from a real VT3 receiver (24ae:1412), interface 1's ff00:0002
+# collection on 2026-11-23: state 1 (on battery), level 0x46 = 70
+VT3_REFERENCE = [0x07, 0x10, 0x03, 0x40, 0x06, 0x40, 0x06, 0x01,
+                 0x46, 0x00, 0x01, 0x01, 0x00]
 # the V700DIY-98's own frame, byte for byte from the reporter's 2026-10-03
 # capture: state 1 (on battery), level 0x54 = 84 (#193)
 BD_REFERENCE = [0xBD, 0x01, 0x00, 0x07, 0x00, 0x46, 0x00, 0x01, 0x54, 0xAD, 0xCF, 0x7D]
@@ -122,6 +126,9 @@ class PollTest(unittest.TestCase):
     def test_the_reference_frame_reads_100_on_battery(self):
         self.assertEqual(R.parse_report(REFERENCE), (100, False))
 
+    def test_the_vt3_capture_reads_70_on_battery(self):
+        self.assertEqual(R.parse_report(VT3_REFERENCE), (70, False))
+
     def test_a_charging_frame_reads_charging(self):
         frame = REFERENCE.copy()
         frame[7] = 0x02
@@ -189,6 +196,23 @@ class PollTest(unittest.TestCase):
         s = out[0]
         self.assertEqual((s.key, s.name, s.level, s.charging, s.online, s.source, s.kind),
                          ("rapoo:1413", "Rapoo VT7 (Gen-2)", 100, False, True, "rapoo", "mouse"))
+
+    def test_the_vt3_is_read_on_the_same_exchange(self):
+        entries = receiver_entries(pid=R.VT3_RECEIVER, prefix=b"vt3")
+        out = self.poll(entries, first_vendor(entries, frame=VT3_REFERENCE))
+        self.assertEqual([(s.key, s.name, s.level, s.charging, s.online,
+                           s.source, s.kind) for s in out],
+                         [("rapoo:1412", "Rapoo VT3", 70, False, True, "rapoo", "mouse")])
+
+    def test_the_vt3_on_its_cable_reads_under_the_same_icon(self):
+        # 24ae:4612 was seen in the device tree with the same collection shape.
+        entries = receiver_entries(pid=R.VT3_CABLE, prefix=b"vt3cable")
+        charge = VT3_REFERENCE.copy()
+        charge[R.STATUS_INDEX] = 0x02
+        charge[R.LEVEL_INDEX] = 0x50
+        out = self.poll(entries, first_vendor(entries, frame=charge))
+        self.assertEqual([(s.key, s.level, s.charging) for s in out],
+                         [("rapoo:1412", 80, True)])
 
     def test_the_vt9_pro_v2_is_read_on_the_same_exchange(self):
         # #235: 24ae:14a9 'Rapoo Gaming Device' publishes ff00:000e, the collection the
@@ -271,8 +295,10 @@ class PollTest(unittest.TestCase):
                          [("rapoo:1413", 80, True, True)])
 
     def test_the_pinned_ids(self):
-        self.assertEqual((R.VT7_RECEIVER, R.VT7_CABLE, R.V700DIY_KEYBOARD,
-                          R.V700DIY_RECEIVER), (0x1413, 0x4613, 0x4824, 0x1924))
+        self.assertEqual((R.VT3_RECEIVER, R.VT3_CABLE, R.VT7_RECEIVER,
+                          R.VT7_CABLE, R.V700DIY_KEYBOARD,
+                          R.V700DIY_RECEIVER),
+                         (0x1412, 0x4612, 0x1413, 0x4613, 0x4824, 0x1924))
 
     def test_junk_before_the_frame_is_skipped(self):
         junk = [0x06, 0x02, 0x01, 0xD0, 0x07, 0xD0, 0x07, 0x01, 0x64]

@@ -30,9 +30,16 @@ in turn and the one that answers is remembered, exactly like the 0xBB listener
 for the 2023 receivers in issue #109 (nothing about which collection carries
 the report is visible before hardware runs it).
 
-Two devices are claimed, from issue #193's diagnostics - each over the two
-ids it appears under, so one icon covers both of its states:
+Three devices are claimed - each over the two ids it appears under, so one
+icon covers both of its states:
 
+  * the VT3 mouse: 24AE:1412 (its 2.4 GHz receiver) and 24AE:4612, the id the
+    same mouse shows up under on its charging cable. A read-only capture on
+    2026-11-23 saw the receiver push `07 10 03 40 06 40 06 01 46 00 01 01 00`
+    on interface 1's ff00:0002 collection: state 1 (on battery), level 0x46 =
+    70. The cable id was present in the same machine's device tree with the
+    identical collection shape but was not connected during the capture, so
+    its charging reading is not yet hardware-confirmed.
   * the VT7 (Gen-2) mouse: 24AE:1413 (its 2.4 GHz receiver; Rapoo's own device
     map points this receiver id at the "VT7" model) and 24AE:4613, the id the
     same mouse shows up under while it sits on its charging cable (seen in the
@@ -74,6 +81,8 @@ from . import hidlist
 from .base import DeviceStatus, Provider, hexdump, log
 
 RAPOO_VID = 0x24AE
+VT3_RECEIVER = 0x1412      # the mouse's 2.4 GHz receiver (level read on hardware)
+VT3_CABLE = 0x4612         # ... and the same mouse on its charging cable (unconfirmed)
 VT7_RECEIVER = 0x1413      # the mouse's 2.4 GHz receiver
 VT9_PRO_RECEIVER = 0x185A  # older VT9 Pro, passive BB family from issue #109
 VT7_CABLE = 0x4613         # ... and the same mouse on its charging cable
@@ -82,6 +91,8 @@ V700DIY_RECEIVER = 0x1924  # ... and its own 2.4 GHz receiver
 # pid -> (name, kind, the id its icon is keyed on): both states of one device
 # share an icon, and a reading that reports charging wins in the merge below.
 PIDS = {
+    VT3_RECEIVER: ("Rapoo VT3", "mouse", VT3_RECEIVER),
+    VT3_CABLE: ("Rapoo VT3", "mouse", VT3_RECEIVER),
     VT7_RECEIVER: ("Rapoo VT7 (Gen-2)", "mouse", VT7_RECEIVER),
     VT7_CABLE: ("Rapoo VT7 (Gen-2)", "mouse", VT7_RECEIVER),
     V700DIY_RECEIVER: ("Rapoo V700DIY-98", "keyboard", V700DIY_KEYBOARD),
